@@ -1,5 +1,5 @@
 # matching
-Finding counterparts to the IRAS PSC/FSC in various large surveys
+Finding counterparts to the IRAS PSC/FSC in various large surveys.
 
 The Abrahamyan et al. (2015) catalogue, which has matched the PSC and FSC to the AKARI IRC/FIS and WISE All-Sky surveys. Starting with their table, we extend the matching to large surveys such as AllWISE, 2MASS, Gaia DR2, and many others.
 
