@@ -7,4 +7,4 @@ The scripts in this repository are meant to reproduce the entire dataset used fo
 
 To start, the file doall_Ab2015.py stores the queries in an astropy table, then uses astroquery to run TAP queries from this table. The output from these queries is again in the form of astropy tables, which are combined to generate the complete catalogue.
 
-Once this full catalogue is generated, the rows corresponding to the NESS sample can be extracted.
+Once this full catalogue is generated, the rows corresponding to the NESS sample can be extracted (the file NESScatalog.xml contains the IRAS PSC IDs of the NESS targets without the "IRAS " prefix).
