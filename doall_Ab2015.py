@@ -1,6 +1,8 @@
-from astropy.table import Table
+from astropy.table import Table, join
 import numpy as np
 from astroquery.utils.tap.core import TapPlus
+import os
+import pandas as pd
 
 def doquery_from_table(table):
     #Execute a TAP+ query using information from a single row of an astropy table
@@ -169,10 +171,27 @@ def runAb2015queries():
         try:
             #required for query 6
             if i == 5:
-                t = Table.read('Ab2015.xml', format = 'votable')
-                s = Table([t['IRAS_PSC_ID'], t['IRAS_FSC_ID'], t['WISE_AllSky_ID']])
-                s.write('Ab2015_PSCFSCWISEID.xml', format = 'votable', overwrite = True)
-                print(bcolors.WARNING + "This may take a while. Go do something else." + bcolors.ENDC)
+                #t = Table.read('Ab2015.xml', format = 'votable')
+                #s = Table([t['IRAS_PSC_ID'], t['IRAS_FSC_ID'], t['WISE_AllSky_ID']])
+                #s.write('Ab2015_PSCFSCWISEID.xml', format = 'votable', overwrite = True)
+                #print(bcolors.WARNING + "This may take a while. Go do something else." + bcolors.ENDC)
+                print(bcolors.WARNING + """You will have to perform a cross-match between the Abrahamyan et al. 2015 table and
+                the AllWISE catalog. Instructions follow:
+                1) Go to http://cdsxmatch.u-strasbg.fr/
+                2) Type "II/338/catalog" in the left-hand tab (this is the Vizier table for Abrahamyan et al.).
+                3) Type "AllWISE" in the right-hand tab.
+                4) Expand "Show options" and set a radius of 30".
+                5) Click "Begin the X-Match". This takes about 20 min and generates a >300 MB file.
+                6) Download the VOTable into Ab2015_x_AllWISE_30arcsec.xml OR the CSV into Ab2015_x_AllWISE_30arcsec.csv""" + bcolors.ENDC)
+                input("Press ENTER when done: ")
+                if os.path.isfile('./Ab2015_x_AllWISE.xml'):
+                    t = Table.read('Ab2015_x_AllWISE.xml', format = 'votable')
+                else:
+                    t = Table.from_pandas(pd.read_csv('Ab2015_x_AllWISE_30arcsec.csv', delimiter = ','))
+                #Do other stuff, e.g., choose nearest AllWISE neighbour
+                #Save the processed file to Ab2015_IRASAllWISEID.xml
+                s = Table([t['IRAS-PSC'], t['IRAS-FSC'], t['AllWISE']], names = ('IRAS_PSC_ID', 'IRAS_FSC_ID', 'AllWISE_ID'))
+                s.write('Ab2015_IRASAllWISEID.xml', format = 'votable', overwrite = 'True')
             #required for query 7
             if i == 6:
                 t = Table.read('Ab2015_IRAS_AKARI_x_WISEAllSky.xml', format = 'votable')
@@ -192,5 +211,5 @@ def combinetables():
     #combine the results of Ab2015queries into one giant table.
     t1 = Table.read('Ab2015.xml', format = 'votable')
     t2 = Table.read('Ab2015_x_IRASPSC.xml', format = 'votable')
-    tt = join()
+    tt = join(t1, t2, keys = ['IRAS_PSC_ID', 'IRAS_FSC_ID'], join_type = 'left')
 
