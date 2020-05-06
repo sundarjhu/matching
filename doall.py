@@ -327,6 +327,23 @@ def getWISEAllSkyAllWISEnnb(radius = 60):
     _, lu = np.unique(t[lk]['IRAS_CNTR'], return_index = True)
     t[lk[lu]].write('Ab2015_WISEAllSky_AllWISEnnb_60arcsec.vot', format = 'votable', overwrite = True)
 
+def getWISEAllSkyAllWISEMSXnnb(radius = 60):
+    t = Table.read('MSXonly.vot', format = 'votable')
+    k = np.nonzero(t['WISE'] != '')[0]
+    s = Table([t[k]['IRAS_CNTR'], t[k]['RAwis'], t[k]['DEwis']])
+    splitVOTable(intable = s, infile = 'Ab2015_WISEAllSky.xml', n_outfiles = 3)
+    for i in range(3):
+        cdsxmatch(cat1 = open('Ab2015_WISEAllSky_part' + str(i+1) + '.xml', 'r'), cat2 = 'vizier:II/328/allwise',
+                  match_radius = radius, colRA1 = 'RAwis', colDEC1 = 'DEwis',
+                  outfile = 'Ab2015_WISEAllSky_part' + str(i+1) + 'AllWISEnnb_60arcsec', outformat = 'votable', \
+                  overwrite = True)
+    combineVOTables(infiles = ['Ab2015_WISEAllSky_part' + str(i+1) + 'AllWISEnnb_60arcsec.vot' for i in range(3)],
+                    outfile = 'Ab2015_WISEAllSky_AllWISEnnb_60arcsec.vot')
+    t = Table.read('Ab2015_WISEAllSky_AllWISEnnb_60arcsec.vot', format = 'votable')
+    lk = np.lexsort([t['IRAS_CNTR'], t['angDist']])
+    _, lu = np.unique(t[lk]['IRAS_CNTR'], return_index = True)
+    t[lk[lu]].write('Ab2015_WISEAllSky_AllWISEnnb_60arcsec.vot', format = 'votable', overwrite = True)
+
 def getAllWISE_nnb():
     #Combine AllWISE matches from the three methods and grab only the nearest neighbour from each method
     #   for a given IRAS source.
@@ -410,6 +427,18 @@ def getAllWISE():
     #Combine results of the three tables and only pick the nearest neighbour from each method.
     getAllWISE_nnb()
 
+def getAllWISEMSX():
+    """ Simpler alternative to the above function based on improved positional accuracy of MSX compared to IRAS/AKARI
+
+Three methods to find AllWISE matches within 60":
+    (1) Use the WISE AllSky coordinate.
+    (2) Use the IRAS best coordinate.
+    (3) Use the IRAS/AKARI best coordinate.
+    """
+    #Use the WISE AllSky coordinate
+    getWISEAllSkyAllWISEMSXnnb(radius = 3)
+    
+
 def getGaiaDR2():
     queryurl = 'http://gea.esac.esa.int/tap-server/tap'
     un = ['WISEAllSky_AllWISE', 'IRAS_AllWISE', 'IRAS_AKARI_AllWISE']
@@ -480,6 +509,28 @@ def getGaiaDR2_othercats():
               names = ('queryurl', 'query', 'upload_resource', 'upload_table_name', 'outfile'))
     r = doquery_from_table(q)
 
+
+def doMSX():
+    """ 
+    This function is intended to replicate the current functionality of 
+    doall but modified to meet our needs to start from MSX instead of IRAS. 
+    For MSX, we can trust the coordinates relatively well, unlike IRAS, thanks
+    to the improved angular resolution. Hence, instead of trying to use
+    AKARI to improve the coordinate precision, we just have to match MSX to 
+    AKARI to get the fluxes, then propagate that through to (ALL)WISE/2MASS/Gaia
+    just the same as with the IRAS Bestpos, but using the MSX coordinates as 
+    the Bestpos.
+    """
+
+    #Open the table of MSX sources with no IRAS counterparts
+    t = Table.read("MSXonly.vot", format="votable")
+
+    #Now, we don't need to update the bestcoord, but we do need to get AKARI information
+
+
+    #Goddamnit Sundar, I have to re-write your above functions for the MSX matches because the filenames are hardcoded.
+    getAllWISEMSX()
+    pass
 
 def doall():
     #Run query to download the Abrahamyan+ 2015 catalogue.
